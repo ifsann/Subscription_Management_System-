@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, render_template, request, redirect, url_for, flash, abort, g
 from sqlalchemy.exc import IntegrityError
-from models import db, Invoice, Payment, Subscription
+from models import db, Invoice, Payment, Subscription, Discount
 from auth import login_required, role_required
 
 bp = Blueprint("billing", __name__)
@@ -13,9 +13,27 @@ def add_period(d, period):
     return d + {"daily": timedelta(days=1), "weekly": timedelta(weeks=1),
                 "monthly": relativedelta(months=1), "yearly": relativedelta(years=1)}[period]
 
-def discount_for(sub, subtotal):
-    """Hook for the discounts part. Return the amount to subtract. 0 for now."""
-    return 0.0
+def amounts_for(sub):
+    """Subtotal and raw tax. Uses the subscription lines (Person 1).
+    No lines? Fall back to plan price x quantity at the default tax rate."""
+    if sub.lines:
+        subtotal = sum(l.quantity * l.unit_price for l in sub.lines)
+        tax = sum(l.quantity * l.unit_price * l.tax_percent / 100 for l in sub.lines)
+    else:
+        subtotal = sub.plan.price * sub.quantity
+        tax = subtotal * TAX_RATE
+    return round(subtotal, 2), tax
+
+def pick_discount(subtotal, today):
+    """First valid discount. Returns (amount, discount) or (0, None)."""
+    for d in Discount.query.order_by(Discount.id).all():
+        if d.start_date and today < d.start_date: continue
+        if d.end_date and today > d.end_date: continue
+        if d.usage_limit and d.times_used >= d.usage_limit: continue
+        if subtotal < (d.min_amount or 0): continue
+        off = subtotal * d.value / 100 if d.kind == "percent" else d.value
+        return round(min(off, subtotal), 2), d
+    return 0.0, None
 
 def generate_invoices(today=None):
     """Bill every Active subscription that is due. Safe to run repeatedly:
@@ -29,9 +47,9 @@ def generate_invoices(today=None):
         while s.next_billing_date <= today and (not s.expiry_date or s.next_billing_date <= s.expiry_date):
             start = s.next_billing_date
             end = add_period(start, s.plan.billing_period) - timedelta(days=1)
-            subtotal = round(s.plan.price * s.quantity, 2)
-            disc = round(min(discount_for(s, subtotal), subtotal), 2)
-            tax = round((subtotal - disc) * TAX_RATE, 2)
+            subtotal, raw_tax = amounts_for(s)
+            disc, dobj = pick_discount(subtotal, today)
+            tax = round(raw_tax * (1 - disc / subtotal), 2) if subtotal else 0.0
             inv = Invoice(subscription_id=s.id, customer_id=s.customer_id,
                           period_start=start, period_end=end, subtotal=subtotal,
                           discount=disc, tax=tax, total=round(subtotal - disc + tax, 2),
@@ -40,6 +58,7 @@ def generate_invoices(today=None):
                 with db.session.begin_nested():
                     db.session.add(inv); db.session.flush()
                     inv.number = f"INV-{inv.id:05d}"
+                if dobj: dobj.times_used = (dobj.times_used or 0) + 1
                 created += 1
             except IntegrityError:
                 skipped += 1      # already billed for this period
@@ -96,6 +115,7 @@ def record_payment(iid):
         flash("Only Confirmed invoices can take payments."); return redirect(url_for("billing.invoice_detail", iid=iid))
     try: amt = round(float(request.form["amount"]), 2)
     except ValueError: amt = 0
+    if amt != amt: amt = 0   # NaN guard
     if amt <= 0 or amt > inv.balance:
         flash(f"Amount must be between 0.01 and the balance ({inv.balance})."); return redirect(url_for("billing.invoice_detail", iid=iid))
     db.session.add(Payment(invoice_id=inv.id, method=request.form["method"], amount=amt,

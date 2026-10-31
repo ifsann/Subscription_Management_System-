@@ -1,7 +1,7 @@
 from flask import Flask
 from werkzeug.security import generate_password_hash
 from models import db, User
-import auth, billing, dashboard
+import auth, billing, subscriptions, dashboard
 
 def create_app(db_uri="sqlite:///brightloop.db"):
     app = Flask(__name__)
@@ -9,6 +9,7 @@ def create_app(db_uri="sqlite:///brightloop.db"):
     db.init_app(app)
     app.register_blueprint(auth.bp)
     app.register_blueprint(billing.bp)
+    app.register_blueprint(subscriptions.bp)
     app.register_blueprint(dashboard.bp)
     with app.app_context():
         db.create_all()
