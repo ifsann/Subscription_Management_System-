@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% block title %}My membership · Brightloop{% endblock %}
+{% block body %}<h1>My membership</h1>
+<div class="cols">
+<div class="panel"><h3>You owe</h3><div class="owed">{{ balance|money }}</div>
+{% if overdue %}<p><span class="tag Overdue">{{ overdue }} overdue</span> Please pay at the front desk.</p>{% elif balance %}<p class="muted">Nothing is late yet.</p>{% else %}<p class="muted">You are all paid up.</p>{% endif %}</div>
+<div class="panel"><h3>My plans</h3>
+{% for s in subs %}{% if loop.first %}<table>{% endif %}<tr><td>{{ s.number }}<td>{{ s.plan.name }}<td>{% if s.next_billing_date %}next bill {{ s.next_billing_date }}{% endif %}<td><span class="tag {{ s.status }}">{{ s.status }}</span></tr>{% if loop.last %}</table>{% endif %}
+{% else %}<p class="empty">No memberships yet. Ask the front desk to set one up.</p>{% endfor %}</div>
+</div>
+<div class="panel"><h2>Recent invoices</h2>
+{% for i in invs %}{% if loop.first %}<table><tr><th>Invoice<th>Period<th class="r">Total<th class="r">Balance<th>Status</tr>{% endif %}
+{% set st = 'Overdue' if i.is_overdue else i.status %}
+<tr><td><a href="{{ url_for('billing.invoice_detail', iid=i.id) }}">{{ i.number }}</a><td>{{ i.period_start }}<td class="r">{{ i.total|money }}<td class="r">{{ i.balance|money }}<td><span class="tag {{ st }}">{{ st }}</span></tr>{% if loop.last %}</table>{% endif %}
+{% else %}<p class="empty">No invoices yet.</p>{% endfor %}</div>{% endblock %}

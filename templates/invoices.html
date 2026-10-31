@@ -1,9 +1,18 @@
-{% extends "base.html" %}{% block body %}<h2>Invoices</h2>
-<p>Filter: <a href="?">All</a> {% for s in ['Draft','Confirmed','Paid','Overdue','Cancelled'] %}| <a href="?status={{ s }}">{{ s }}</a> {% endfor %}</p>
-{% if g.user.role != 'customer' %}<form method="post" action="{{ url_for('billing.run_billing') }}"><button>Run billing now</button></form>{% endif %}
-<table border=1 cellpadding=4><tr><th>No.<th>Customer<th>Period<th>Total<th>Balance<th>Due<th>Status</tr>
-{% for i in p.items %}<tr><td><a href="{{ url_for('billing.invoice_detail', iid=i.id) }}">{{ i.number }}</a>
-<td>{{ i.customer.email }}<td>{{ i.period_start }} to {{ i.period_end }}<td>{{ i.total }}<td>{{ i.balance }}<td>{{ i.due_date }}
-<td>{{ 'Overdue' if i.is_overdue else i.status }}</tr>{% endfor %}</table>
-{% if p.has_prev %}<a href="?page={{ p.prev_num }}&status={{ status or '' }}">Prev</a>{% endif %}
-{% if p.has_next %}<a href="?page={{ p.next_num }}&status={{ status or '' }}">Next</a>{% endif %}{% endblock %}
+{% extends "base.html" %}{% block title %}Invoices · Brightloop{% endblock %}
+{% block body %}<h1>{{ 'My invoices' if g.user.role == 'customer' else 'Invoices' }}</h1>
+<div class="filters">
+{% for s in ['', 'Draft','Confirmed','Paid','Overdue','Cancelled'] %}
+<a class="btn {{ '' if (status or '') == s else 'ghost' }}" style="{{ '' if (status or '') == s else 'background:transparent;color:#181B1A;border:1px solid #8A9290' }}" href="?status={{ s }}">{{ s or 'All' }}</a>{% endfor %}
+{% if g.user.role != 'customer' %}<form method="post" action="{{ url_for('billing.run_billing') }}" style="margin-left:auto"><button>Run billing now</button></form>{% endif %}
+</div>
+<div class="panel tablewrap">
+{% if p.items %}<table><tr><th>Invoice<th>Customer<th>Period<th class="r">Total<th class="r">Balance<th>Due<th>Status</tr>
+{% for i in p.items %}{% set st = 'Overdue' if i.is_overdue else i.status %}
+<tr><td><a href="{{ url_for('billing.invoice_detail', iid=i.id) }}">{{ i.number }}</a>
+<td>{{ i.customer.email }}<td>{{ i.period_start }} to {{ i.period_end }}
+<td class="r">{{ i.total|money }}<td class="r">{{ i.balance|money }}<td>{{ i.due_date }}<td><span class="tag {{ st }}">{{ st }}</span></tr>{% endfor %}</table>
+{% else %}<p class="empty">No invoices match this filter.</p>{% endif %}
+</div>
+<div class="pager">{% if p.has_prev %}<a href="?page={{ p.prev_num }}&status={{ status or '' }}">Previous</a>{% endif %}
+<span class="muted">Page {{ p.page }} of {{ p.pages or 1 }}</span>
+{% if p.has_next %}<a href="?page={{ p.next_num }}&status={{ status or '' }}">Next</a>{% endif %}</div>{% endblock %}

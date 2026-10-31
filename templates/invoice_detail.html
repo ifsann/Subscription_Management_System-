@@ -1,14 +1,29 @@
-{% extends "base.html" %}{% block body %}<h2>{{ inv.number }} <small>({{ 'Overdue' if inv.is_overdue else inv.status }})</small></h2>
-<p>Customer: {{ inv.customer.email }}<br>Plan: {{ inv.subscription.plan.name }} x {{ inv.subscription.quantity }}<br>
-Period: {{ inv.period_start }} to {{ inv.period_end }}<br>Due: {{ inv.due_date }}</p>
-<table border=1 cellpadding=4><tr><td>Subtotal<td>{{ inv.subtotal }}</tr><tr><td>Discount<td>-{{ inv.discount }}</tr>
-<tr><td>Tax<td>{{ inv.tax }}</tr><tr><th>Total<th>{{ inv.total }}</tr><tr><td>Paid<td>{{ inv.paid_amount }}</tr><tr><th>Balance<th>{{ inv.balance }}</tr></table>
+{% extends "base.html" %}{% block title %}{{ inv.number }} · Brightloop{% endblock %}
+{% block body %}{% set st = 'Overdue' if inv.is_overdue else inv.status %}
+<h1>{{ inv.number }} <span class="tag {{ st }}" style="vertical-align:middle">{{ st }}</span></h1>
+<div class="cols">
+<div class="panel"><h3>Bill to</h3>
+<p>{{ inv.customer.email }}<br>{{ inv.subscription.plan.name }} × {{ inv.subscription.quantity }}<br>
+Period {{ inv.period_start }} to {{ inv.period_end }}<br>Due {{ inv.due_date }}</p>
+<table><tr><td>Subtotal<td class="r">{{ inv.subtotal|money }}</tr>
+<tr><td>Discount<td class="r">-{{ inv.discount|money }}</tr>
+<tr><td>Tax<td class="r">{{ inv.tax|money }}</tr>
+<tr><th>Total<th class="r">{{ inv.total|money }}</tr>
+<tr><td>Paid<td class="r">{{ inv.paid_amount|money }}</tr>
+<tr><th>Balance<th class="r">{{ inv.balance|money }}</tr></table>
+<p><button class="ghost" onclick="print()">Print invoice</button></p></div>
+<div>
 {% if g.user.role != 'customer' %}
-{% for a in ['confirm','cancel'] %}<form method="post" action="{{ url_for('billing.invoice_action', iid=inv.id, action=a) }}" style="display:inline"><button>{{ a|title }}</button></form>{% endfor %}
-{% if inv.status == 'Confirmed' %}<h3>Record payment</h3>
+<div class="panel"><h3>Actions</h3>
+{% for a in ['confirm','cancel'] %}<form method="post" action="{{ url_for('billing.invoice_action', iid=inv.id, action=a) }}" style="display:inline">
+<button class="{{ 'danger' if a == 'cancel' else '' }}">{{ a|title }}</button></form> {% endfor %}</div>
+{% if inv.status == 'Confirmed' %}<div class="panel"><h3>Record a payment</h3>
 <form method="post" action="{{ url_for('billing.record_payment', iid=inv.id) }}">
-Amount <input name="amount" type="number" step="0.01" value="{{ inv.balance }}">
-Method <select name="method"><option>cash<option>card<option>upi<option>bank</select>
-Note <input name="note"><button>Save</button></form>{% endif %}{% endif %}
-<h3>Payments</h3><ul>{% for p in inv.payments %}<li>{{ p.paid_on }}: {{ p.amount }} by {{ p.method }} {{ p.note }}</li>{% else %}<li>None yet</li>{% endfor %}</ul>
-<button onclick="print()">Print</button>{% endblock %}
+<div class="filters"><label>Amount<input name="amount" type="number" step="0.01" min="0.01" value="{{ inv.balance }}"></label>
+<label>Method<select name="method"><option>cash<option>card<option>upi<option>bank</select></label></div>
+<label>Note<input name="note"></label><br><button>Save payment</button></form></div>{% endif %}
+{% endif %}
+<div class="panel"><h3>Payments</h3>
+{% for p in inv.payments %}{% if loop.first %}<table>{% endif %}<tr><td>{{ p.paid_on }}<td>{{ p.method }}<td class="r">{{ p.amount|money }}<td class="muted">{{ p.note }}</tr>{% if loop.last %}</table>{% endif %}
+{% else %}<p class="empty">No payments yet.</p>{% endfor %}</div>
+</div></div>{% endblock %}

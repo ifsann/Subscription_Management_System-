@@ -1,4 +1,7 @@
-{% extends "base.html" %}{% block body %}<h2>Login</h2>
-<form method="post">Email <input name="email" type="email" required><br>
-Password <input name="password" type="password" required><br><button>Login</button></form>
-<a href="{{ url_for('auth.forgot') }}">Forgot password?</a>{% endblock %}
+{% extends "base.html" %}{% block title %}Log in · Brightloop{% endblock %}
+{% block bare %}<div class="panel"><h2>Log in</h2>
+<form method="post">
+<label>Email<input name="email" type="email" required autofocus></label><br>
+<label>Password<input name="password" type="password" required></label><br>
+<button>Log in</button></form>
+<p class="muted"><a href="{{ url_for('auth.forgot') }}">Forgot password?</a> · <a href="{{ url_for('auth.signup') }}">Join the gym</a></p></div>{% endblock %}

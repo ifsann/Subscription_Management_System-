@@ -1,3 +1,5 @@
-{% extends "base.html" %}{% block body %}<h2>Forgot password</h2>
-<form method="post">Email <input name="email" type="email" required><button>Send reset link</button></form>
-{% if link %}<p>Demo only (no mail server): <a href="{{ link }}">{{ link }}</a></p>{% endif %}{% endblock %}
+{% extends "base.html" %}{% block title %}Reset password · Brightloop{% endblock %}
+{% block bare %}<div class="panel"><h2>Forgot your password?</h2>
+<form method="post"><label>Registered email<input name="email" type="email" required autofocus></label><br><button>Send reset link</button></form>
+{% if link %}<p class="muted">Demo mode, no mail server: <a href="{{ link }}">open the reset link</a></p>{% endif %}
+<p><a href="{{ url_for('auth.login') }}">Back to log in</a></p></div>{% endblock %}

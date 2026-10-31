@@ -1,11 +1,34 @@
-<!doctype html><title>Brightloop Gym</title>
-<body style="font-family:sans-serif;max-width:900px;margin:20px auto">
-<nav>
-{% if g.user %}{{ g.user.email }} ({{ g.user.role }}) |
-<a href="{{ url_for('billing.invoices') }}">Invoices</a>
-{% if g.user.role == 'admin' %}| <a href="{{ url_for('auth.new_staff') }}">Add staff</a>{% endif %}
-| <a href="{{ url_for('auth.logout') }}">Logout</a>
-{% else %}<a href="{{ url_for('auth.login') }}">Login</a> | <a href="{{ url_for('auth.signup') }}">Sign up</a>{% endif %}
-</nav><hr>
-{% for m in get_flashed_messages() %}<p style="background:#ffc;padding:6px">{{ m }}</p>{% endfor %}
-{% block body %}{% endblock %}
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Brightloop Gym{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head><body>
+{% macro flashes() %}{% for m in get_flashed_messages() %}<div class="flash" role="status">{{ m }}</div>{% endfor %}{% endmacro %}
+{% if g.user %}
+<div class="shell">
+  <nav class="side" aria-label="Main">
+    <div class="brand">Bright<span>loop</span></div>
+    {% set ep = request.endpoint or '' %}
+    {% if g.user.role == 'customer' %}
+      <a href="{{ url_for('dashboard.account') }}" class="{{ 'on' if ep == 'dashboard.account' }}">My membership</a>
+      <a href="{{ url_for('billing.invoices') }}" class="{{ 'on' if ep.startswith('billing') }}">My invoices</a>
+    {% else %}
+      <a href="{{ url_for('dashboard.home') }}" class="{{ 'on' if ep == 'dashboard.home' }}">Dashboard</a>
+      <a href="{{ url_for('billing.invoices') }}" class="{{ 'on' if ep.startswith('billing') }}">Invoices</a>
+      {% block extra_nav %}{% endblock %}
+      {% if g.user.role == 'admin' %}<a href="{{ url_for('auth.new_staff') }}" class="{{ 'on' if ep == 'auth.new_staff' }}">Add staff</a>{% endif %}
+    {% endif %}
+    <div class="who">{{ g.user.email }}<br>{{ g.user.role|title }} · <a href="{{ url_for('auth.logout') }}" style="color:#cfd4d2">Log out</a></div>
+  </nav>
+  <main class="main">{{ flashes() }}{% block body %}{% endblock %}</main>
+</div>
+{% else %}
+<main class="bare">
+  <div class="brand">Bright<span>loop</span></div>
+  {{ flashes() }}{% block bare %}{% endblock %}
+</main>
+{% endif %}
+</body></html>
