@@ -42,9 +42,6 @@ Staff confirm invoices and record payments. Customers see only their own at /acc
 
 \## Team
 
-Person 1: plans, subscriptions, billing core
-
-Person 2: auth, roles, invoices, payments
-
-Person 3: dashboard, customer portal, styling
+Ifsan: plans, subscriptions, discounts, billing core, final merge
+Rithin-7: auth, roles, invoices, payments, dashboard, customer portal
 
