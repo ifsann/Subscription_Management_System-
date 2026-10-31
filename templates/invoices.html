@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block body %}<h2>Invoices</h2>
+<p>Filter: <a href="?">All</a> {% for s in ['Draft','Confirmed','Paid','Overdue','Cancelled'] %}| <a href="?status={{ s }}">{{ s }}</a> {% endfor %}</p>
+{% if g.user.role != 'customer' %}<form method="post" action="{{ url_for('billing.run_billing') }}"><button>Run billing now</button></form>{% endif %}
+<table border=1 cellpadding=4><tr><th>No.<th>Customer<th>Period<th>Total<th>Balance<th>Due<th>Status</tr>
+{% for i in p.items %}<tr><td><a href="{{ url_for('billing.invoice_detail', iid=i.id) }}">{{ i.number }}</a>
+<td>{{ i.customer.email }}<td>{{ i.period_start }} to {{ i.period_end }}<td>{{ i.total }}<td>{{ i.balance }}<td>{{ i.due_date }}
+<td>{{ 'Overdue' if i.is_overdue else i.status }}</tr>{% endfor %}</table>
+{% if p.has_prev %}<a href="?page={{ p.prev_num }}&status={{ status or '' }}">Prev</a>{% endif %}
+{% if p.has_next %}<a href="?page={{ p.next_num }}&status={{ status or '' }}">Next</a>{% endif %}{% endblock %}

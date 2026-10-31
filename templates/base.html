@@ -1,0 +1,11 @@
+<!doctype html><title>Brightloop Gym</title>
+<body style="font-family:sans-serif;max-width:900px;margin:20px auto">
+<nav>
+{% if g.user %}{{ g.user.email }} ({{ g.user.role }}) |
+<a href="{{ url_for('billing.invoices') }}">Invoices</a>
+{% if g.user.role == 'admin' %}| <a href="{{ url_for('auth.new_staff') }}">Add staff</a>{% endif %}
+| <a href="{{ url_for('auth.logout') }}">Logout</a>
+{% else %}<a href="{{ url_for('auth.login') }}">Login</a> | <a href="{{ url_for('auth.signup') }}">Sign up</a>{% endif %}
+</nav><hr>
+{% for m in get_flashed_messages() %}<p style="background:#ffc;padding:6px">{{ m }}</p>{% endfor %}
+{% block body %}{% endblock %}
