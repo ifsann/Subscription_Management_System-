@@ -5,7 +5,7 @@ import auth, billing, subscriptions, dashboard
 
 def create_app(db_uri="sqlite:///brightloop.db"):
     app = Flask(__name__)
-    app.config.update(SECRET_KEY="change-me-for-hackathon", SQLALCHEMY_DATABASE_URI=db_uri)
+    app.config.update(SECRET_KEY="brightloop-k7Q9x2Lm4Vz8-ifsan-2026", SQLALCHEMY_DATABASE_URI=db_uri)
     db.init_app(app)
     app.register_blueprint(auth.bp)
     app.register_blueprint(billing.bp)
