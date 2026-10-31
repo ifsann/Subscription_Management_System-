@@ -66,3 +66,26 @@ with app.app_context():
     post("/login", data={"email": "other@x.com", "password": "Other#Pass1"})
     assert c.get(f"/invoices/{inv.id}").status_code == 403
 print("ALL TESTS PASSED")
+
+# ---- Person 3: dashboard + portal
+import time
+app2 = create_app("sqlite:///:memory:")
+c2 = app2.test_client()
+with app2.app_context():
+    from models import Subscription, Plan, User, Invoice, Payment
+    from werkzeug.security import generate_password_hash
+    u = User(email="m@x.com", password_hash=generate_password_hash("Member#1234"), role="customer"); db.session.add(u)
+    p = Plan(name="Monthly", price=1000, billing_period="monthly"); db.session.add(p); db.session.flush()
+    db.session.add(Subscription(number="S1", customer_id=u.id, plan_id=p.id, status="Active",
+                                next_billing_date=date.today() - timedelta(days=45)))
+    db.session.commit(); generate_invoices()
+    for i in Invoice.query.all(): i.status = "Confirmed"
+    db.session.commit()
+    c2.post("/login", data={"email": "admin@brightloop.com", "password": "Admin@12345"})
+    r = c2.get("/dashboard"); assert r.status_code == 200 and b"Overdue invoices" in r.data
+    assert b"Active memberships" in r.data and b"Money owed" in r.data
+    c2.get("/logout")
+    r = c2.post("/login", data={"email": "m@x.com", "password": "Member#1234"}, follow_redirects=True)
+    assert b"My membership" in r.data and b"You owe" in r.data
+    assert c2.get("/dashboard", follow_redirects=False).status_code == 302   # customers bounced to portal
+print("DASHBOARD TESTS PASSED")

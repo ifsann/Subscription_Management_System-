@@ -62,7 +62,7 @@ def login():
         u = User.query.filter_by(email=request.form["email"].strip().lower()).first()
         if u and check_password_hash(u.password_hash, request.form["password"]):
             session.clear(); session["uid"] = u.id
-            return redirect(url_for("billing.invoices"))
+            return redirect(url_for("dashboard.home"))
         flash("Wrong email or password.")
     return render_template("login.html")
 

@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}Dashboard · Brightloop{% endblock %}
+{% block body %}<h1>Front desk</h1>
+<form class="filters" method="get">
+<label>Revenue from<input type="date" name="from" value="{{ d_from }}"></label>
+<label>to<input type="date" name="to" value="{{ d_to }}"></label>
+<button>Apply</button></form>
+
+<section class="board" aria-label="Key numbers">
+  <div><div class="n">{{ active }}</div><div class="l">Active memberships</div></div>
+  <div><div class="n">{{ revenue|money0 }}</div><div class="l">Revenue collected</div><div class="sub">{{ d_from }} to {{ d_to }}</div></div>
+  <div><div class="n">{{ owed|money0 }}</div><div class="l">Money owed</div><div class="sub">on confirmed invoices</div></div>
+  <div class="{{ 'bad' if overdue_n }}"><div class="n">{{ overdue_n }}</div><div class="l">Overdue invoices</div>
+    <div class="sub"><a href="{{ url_for('billing.invoices', status='Overdue') }}" style="color:#cfd4d2">See all</a></div></div>
+</section>
+
+<div class="cols">
+<div class="panel"><h2>Revenue, last 6 months</h2>
+<div class="bars" role="img" aria-label="Revenue per month">{% for label, v in months %}<div class="bar"><b>{{ ('%.0f' % v) if v else '' }}</b><i style="height:{{ (v / top * 100)|round(0) }}%"></i><span>{{ label }}</span></div>{% endfor %}</div></div>
+
+<div class="panel"><h2>Chase these first</h2>
+{% if overdue_list %}<div class="tablewrap"><table><tr><th>Invoice<th>Due<th class="r">Owed</tr>
+{% for i in overdue_list %}<tr><td><a href="{{ url_for('billing.invoice_detail', iid=i.id) }}">{{ i.number }}</a> <span class="muted">{{ i.customer.email }}</span>
+<td style="white-space:nowrap">{{ (today - i.due_date).days }} days late<td class="r">{{ i.balance|money }}</tr>{% endfor %}</table></div>
+{% else %}<p class="empty">Nothing overdue. Nice.</p>{% endif %}</div>
+</div>
+
+<div class="panel"><h2>Latest payments</h2>
+{% if recent %}<div class="tablewrap"><table><tr><th>Date<th>Invoice<th>Method<th class="r">Amount</tr>
+{% for p in recent %}<tr><td>{{ p.paid_on }}<td><a href="{{ url_for('billing.invoice_detail', iid=p.invoice_id) }}">{{ p.invoice.number }}</a><td>{{ p.method }}<td class="r">{{ p.amount|money }}</tr>{% endfor %}</table></div>
+{% else %}<p class="empty">No payments recorded yet.</p>{% endif %}</div>
+{% endblock %}
