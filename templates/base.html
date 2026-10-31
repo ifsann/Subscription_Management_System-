@@ -18,7 +18,9 @@
     {% else %}
       <a href="{{ url_for('dashboard.home') }}" class="{{ 'on' if ep == 'dashboard.home' }}">Dashboard</a>
       <a href="{{ url_for('billing.invoices') }}" class="{{ 'on' if ep.startswith('billing') }}">Invoices</a>
-      {% block extra_nav %}{% endblock %}
+      <a href="{{ url_for('subs.subscriptions') }}" class="{{ 'on' if ep == 'subs.subscriptions' }}">Subscriptions</a>
+      <a href="{{ url_for('subs.plans') }}" class="{{ 'on' if ep == 'subs.plans' }}">Plans</a>
+      {% if g.user.role == 'admin' %}<a href="{{ url_for('subs.discounts') }}" class="{{ 'on' if ep == 'subs.discounts' }}">Discounts</a>{% endif %}
       {% if g.user.role == 'admin' %}<a href="{{ url_for('auth.new_staff') }}" class="{{ 'on' if ep == 'auth.new_staff' }}">Add staff</a>{% endif %}
     {% endif %}
     <div class="who">{{ g.user.email }}<br>{{ g.user.role|title }} · <a href="{{ url_for('auth.logout') }}" style="color:#cfd4d2">Log out</a></div>

@@ -1,6 +1,4 @@
-# Person 1 owns this file. This is a minimal version so Person 2's code runs.
-# Merge: keep Person 1's real models, but keep the UniqueConstraint on Invoice
-# and the fields that auth.py / billing.py use.
+# MERGED models: Person 1 (plans, subscriptions, lines, discounts) + Person 2 (users, invoices, payments).
 from datetime import date
 from flask_sqlalchemy import SQLAlchemy
 
@@ -20,6 +18,7 @@ class Plan(db.Model):
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     billing_period = db.Column(db.String(10), nullable=False)  # daily|weekly|monthly|yearly
+    min_qty = db.Column(db.Integer, default=1)
 
 class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -72,3 +71,23 @@ class Payment(db.Model):
     amount = db.Column(db.Float, nullable=False)
     paid_on = db.Column(db.Date, default=date.today)
     note = db.Column(db.String(200), default="")
+
+class SubscriptionLine(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    subscription_id = db.Column(db.Integer, db.ForeignKey("subscription.id"), index=True)
+    product_name = db.Column(db.String(80))
+    quantity = db.Column(db.Integer, default=1)
+    unit_price = db.Column(db.Float, default=0)
+    tax_percent = db.Column(db.Float, default=0)
+    subscription = db.relationship("Subscription", backref="lines")
+
+class Discount(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80))
+    kind = db.Column(db.String(10))          # fixed | percent
+    value = db.Column(db.Float)
+    min_amount = db.Column(db.Float, default=0)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    usage_limit = db.Column(db.Integer)
+    times_used = db.Column(db.Integer, default=0)
